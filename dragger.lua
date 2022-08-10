@@ -3,6 +3,7 @@ local dragger = {
   Y = 0,
   savedX = 0,
   savedY = 0,
+  deltaMult = 1,
 }
 
 local wasActive = false
@@ -10,6 +11,8 @@ local wasActive = false
 ---@param isActive boolean
 function dragger.update(isActive)
   local mouseX, mouseY = love.mouse.getPosition()
+  mouseX = mouseX * dragger.deltaMult
+  mouseY = mouseY * dragger.deltaMult
   if isActive ~= wasActive then
     if isActive then
       dragger.savedX = dragger.savedX - mouseX

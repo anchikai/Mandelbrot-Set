@@ -64,8 +64,9 @@ function love.update(dt)
 
     -- Camera Movement
     dragger.update(love.mouse.isDown(3))
-    offset.X = -(dragger.X/size)/150
-    offset.Y = -(dragger.Y/size)/150
+    dragger.deltaMult = size
+    offset.X = -dragger.X/160
+    offset.Y = -dragger.Y/160
 
     -- Reset
     if love.keyboard.isDown("r") then
@@ -99,11 +100,11 @@ function love.update(dt)
     velx = velx - velx * math.min( dt * 10, 1 )
     vely = vely - vely * math.min( dt * 10, 1 )
 
-    realMin = -size + offset.X
-    realMax = size + offset.X
+    realMin = offset.X - size
+    realMax = offset.X + size
 
-    imaginaryMin = -size + offset.Y
-    imaginaryMax = size + offset.Y
+    imaginaryMin = offset.Y - size
+    imaginaryMax = offset.Y + size
 
     maxIterations = clamp(2, maxIterations, 8192)
 end
