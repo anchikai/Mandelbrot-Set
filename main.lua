@@ -59,8 +59,6 @@ end
 local pauseCooldown = 0
 function love.update(dt)
     time = love.timer.getTime()
-    local speed = 0.12 * size
-    local zoomspeed = 1.1
 
     -- Camera Movement
     dragger.update(love.mouse.isDown(3))
