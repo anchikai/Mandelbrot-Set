@@ -1,8 +1,18 @@
 local dragger = require("dragger")
-local complex = require("complex")
 require("reset")
 
-local pointsTable = {}
+---@class point
+---@field [1] integer -- x
+---@field [2] integer -- x
+---@field [3] integer -- r
+---@field [4] integer -- g
+---@field [5] integer -- b
+---@field [6] integer -- a
+
+local shaderFile = assert(io.open("mandelbrot.glsl"))
+local shaderCode = shaderFile:read("*a")
+shaderFile:close()
+
 function love.load()
     love.window.setMode(320, 320)
     love.window.setTitle("Mandelbrot Set")
@@ -13,50 +23,19 @@ function love.load()
     offset.Y = 0
     size = 2.25
     realMin = -size + offset.X
-    realMax = size + offset.X
+    realDiff = 2 * size / love.graphics.getWidth()
 
     imaginaryMin = -size + offset.Y
-    imaginaryMax = size + offset.Y
+    imaginaryDiff = 2 * size / love.graphics.getHeight()
 
     velx, vely = 0, 0
 
     font = love.graphics.newFont("Renogare.ttf", 18)
 
-    local counter = 1
-    for x = 0, love.graphics.getWidth() do
-        for y = 0, love.graphics.getHeight() do
-            pointsTable[counter] = {x, y, 0, 0, 0, 1}
-            counter = counter + 1
-        end
-    end
+    mandelbrotShader = love.graphics.newShader(shaderCode)
+    mandelbrotShader:send('max_iterations', maxIterations)
+    mandelbrotShader:send('inverse_max_iter', inverseMaxIterations)
 end
-
-local juliaX = 0
-local juliaY = 0
-local function mandelbrot(cr, ci)
-    local zr, zi = juliaX, juliaY
-    local n = 0
-    while zr * zr + zi * zi <= 4 and n < maxIterations do
-        zr, zi = zr * zr - zi * zi, zr * zi + zi * zr -- square z
-        zr, zi = zr + cr, zi + ci -- add c to z
-        n = n + 1
-    end
-    return n
-end
-
--- local c = complex.new(0.274, 0.008)
--- local R = 4
-
--- -- where z is x, y coordinates
--- local function julia(z)
---   local n = 0
---   while complex.abs(z) < R and n < maxIterations do
---     z = complex.add(complex.mul(z, z), c)
---     n = n + 1
---   end
-
---   return n
--- end
 
 function clamp(min, val, max)
     return math.max(min, math.min(val, max));
@@ -66,11 +45,13 @@ local pauseCooldown = 0
 function love.update(dt)
     time = love.timer.getTime()
 
+    local width, height = love.graphics.getDimensions()
+
     -- Camera Movement
     dragger.update(love.mouse.isDown(3))
     dragger.deltaMult = size
-    offset.X = -dragger.X/160
-    offset.Y = -dragger.Y/160
+    offset.X = -dragger.X / (width / 2)
+    offset.Y = -dragger.Y / (height / 2)
 
     -- Reset
     if love.keyboard.isDown("r") then
@@ -78,28 +59,14 @@ function love.update(dt)
     end
 
     local wi, hi = love.window.getMode()
-    local windowChanged
     if love.keyboard.isDown("1") and wi ~= 320 then
-        windowChanged = true
         love.window.setMode(320, 320)
     elseif love.keyboard.isDown("2") and wi ~= 512 then
-        windowChanged = true
         love.window.setMode(512, 512)
     elseif love.keyboard.isDown("3") and wi ~= 640 then
-        windowChanged = true
         love.window.setMode(640, 640)
     end
 
-    if windowChanged then
-        pointsTable = {}
-        local counter = 1
-        for x = 0, love.graphics.getWidth() do
-            for y = 0, love.graphics.getHeight() do
-                pointsTable[counter] = {x, y, 0, 0, 0, 1}
-                counter = counter + 1
-            end
-        end
-    end
 
     -- Max Iterations
     if love.mouse.isDown(1) or love.mouse.isDown(2) then
@@ -111,6 +78,8 @@ function love.update(dt)
             end
             maxIterations = clamp(2, maxIterations, 8192)
             inverseMaxIterations = 1 / maxIterations
+            mandelbrotShader:send('max_iterations', maxIterations)
+            mandelbrotShader:send('inverse_max_iter', inverseMaxIterations)
         end
         pauseCooldown = 1
     else
@@ -124,34 +93,27 @@ function love.update(dt)
 
     -- Camera Zoom
     size = math.abs(size / (1 + vely * 0.0075))
-    velx = velx - velx * math.min( dt * 10, 1 )
     vely = vely - vely * math.min( dt * 10, 1 )
 
     realMin = offset.X - size
-    realMax = offset.X + size
+    realDiff = 2 * size / width
 
     imaginaryMin = offset.Y - size
-    imaginaryMax = offset.Y + size
+    imaginaryDiff = 2 * size / height
+
+    mandelbrotShader:send('real_min', realMin)
+    mandelbrotShader:send('imag_min', imaginaryMin)
+    mandelbrotShader:send('real_diff', realDiff)
+    mandelbrotShader:send('imag_diff', imaginaryDiff)
+
 end
 
 function love.draw()
-    local counter = 1
-    for x = 0, love.graphics.getWidth() do
-        for y = 0, love.graphics.getHeight() do
-            local cr, ci = realMin + (x / love.graphics.getWidth()) * (realMax - realMin), imaginaryMin + (y /love.graphics.getHeight()) * (imaginaryMax - imaginaryMin)
-            local m = mandelbrot(cr, ci)
-            R = 1 - m * inverseMaxIterations
-            G = 0.8 - m * inverseMaxIterations
-            B = 1 - m * inverseMaxIterations
-            local point = pointsTable[counter]
-            point[3], point[4], point[5] = R, G, B
-            counter = counter + 1
-        end
-    end
+    local width, height = love.graphics.getDimensions()
+    love.graphics.setShader(mandelbrotShader)
+    love.graphics.rectangle('fill', 0, 0, width, height)
+    love.graphics.setShader()
 
-    love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.points(pointsTable)
-    
     -- Set Info
     love.graphics.setFont(font)
     love.graphics.setColor(1, 1, 1, 0.5)
@@ -187,6 +149,5 @@ function love.draw()
 end
 
 function love.wheelmoved( dx, dy )
-    velx = velx + dx * 20
     vely = vely + dy * 20
 end
