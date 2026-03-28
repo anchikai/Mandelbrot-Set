@@ -8,6 +8,9 @@
  * https://love2d.org/wiki/love.graphics.newShader
  */
 
+uniform float julia_r;
+uniform float julia_i;
+
 uniform float real_min;
 uniform float imag_min;
 
@@ -19,8 +22,8 @@ uniform float inverse_max_iter;
 
 vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
 	int n = 0;
-	float zr = 0.0;
-	float zi = 0.0;
+	float zr = julia_r;
+	float zi = julia_i;
 	float cr = real_min + screen_coords.x * real_diff;
 	float ci = imag_min + screen_coords.y * imag_diff;
 	while (zr * zr + zi * zi <= 4 && n < max_iterations) {

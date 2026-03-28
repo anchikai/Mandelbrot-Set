@@ -27,6 +27,8 @@ function main.load()
 
 	font = love.graphics.newFont("Renogare.ttf", 18)
 
+	juliaR, juliaI = 0, 0
+
 	mandelbrotShader = love.graphics.newShader(shaderCode)
 	mandelbrotShader:send("max_iterations", maxIterations)
 	mandelbrotShader:send("inverse_max_iter", inverseMaxIterations)
@@ -82,8 +84,8 @@ function main.update(dt)
 	end
 
 	if love.keyboard.isDown("space") then
-		juliaX = (love.mouse.getX() - love.graphics.getWidth() / 2) / 100
-		juliaY = (love.mouse.getY() - love.graphics.getHeight() / 2) / 100
+		juliaR = (love.mouse.getX() - love.graphics.getWidth() / 2) / 100
+		juliaI = (love.mouse.getY() - love.graphics.getHeight() / 2) / 100
 	end
 
 	-- Camera Zoom
@@ -96,6 +98,8 @@ function main.update(dt)
 	imaginaryMin = offset.Y - size
 	imaginaryDiff = 2 * size / height
 
+	mandelbrotShader:send("julia_r", juliaR)
+	mandelbrotShader:send("julia_i", juliaI)
 	mandelbrotShader:send("real_min", realMin)
 	mandelbrotShader:send("imag_min", imaginaryMin)
 	mandelbrotShader:send("real_diff", realDiff)

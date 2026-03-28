@@ -32,10 +32,11 @@ function main.load()
 
 	font = love.graphics.newFont("Renogare.ttf", 18)
 
+	juliaR, juliaI = 0, 0
+
 	mandelbrotShader = love.graphics.newShader(shaderCode)
 	mandelbrotShader:send("max_iterations", maxIterations)
 	mandelbrotShader:send("inverse_max_iter", inverseMaxIterations)
-	print(4)
 end
 
 function clamp(min, val, max)
@@ -100,8 +101,8 @@ function main.update(dt)
 	end
 
 	if love.keyboard.isDown("space") then
-		juliaX = (love.mouse.getX() - love.graphics.getWidth() / 2) / 100
-		juliaY = (love.mouse.getY() - love.graphics.getHeight() / 2) / 100
+		juliaR = (love.mouse.getX() - love.graphics.getWidth() / 2) / 100
+		juliaI = (love.mouse.getY() - love.graphics.getHeight() / 2) / 100
 	end
 
 	-- Camera Zoom
@@ -114,6 +115,12 @@ function main.update(dt)
 	imaginaryMin = offset.Y - size
 	imaginaryDiff = 2 * size / height
 
+	local juliaRHi, juliaRLo = split_df64(juliaR)
+	mandelbrotShader:send("julia_r_hi", juliaRHi)
+	mandelbrotShader:send("julia_r_lo", juliaRLo)
+	local juliaIHi, juliaILo = split_df64(juliaI)
+	mandelbrotShader:send("julia_i_hi", juliaIHi)
+	mandelbrotShader:send("julia_i_lo", juliaILo)
 	local realMinHi, realMinLo = split_df64(realMin)
 	mandelbrotShader:send("real_min_hi", realMinHi)
 	mandelbrotShader:send("real_min_lo", realMinLo)
@@ -146,7 +153,7 @@ function main.draw()
 	end
 	if not love.keyboard.isDown("tab") then
 		love.graphics.setColor(1, 1, 1, 0.5)
-		love.graphics.rectangle("fill", 0, love.graphics.getHeight() - 32, 72, 32)
+		love.graphics.rectangle("fill", 0, height - 32, 72, 32)
 	end
 	love.graphics.setColor(0, 0, 0)
 	love.graphics.print(string.format("Size: %.3g", size), 2, 20)
@@ -155,20 +162,16 @@ function main.draw()
 	-- Controls Help
 	if love.keyboard.isDown("tab") then
 		love.graphics.setColor(1, 1, 1, 0.5)
-		love.graphics.rectangle("fill", 0, love.graphics.getHeight() - 115, love.graphics.getWidth(), 115)
+		love.graphics.rectangle("fill", 0, height - 115, love.graphics.getWidth(), 115)
 		love.graphics.setColor(0, 0, 0)
-		love.graphics.print("Pan Camera: Middle Click", 2, love.graphics.getHeight() - 115)
-		love.graphics.print("Zoom In/Out: Scroll Up/Down", 2, love.graphics.getHeight() - 92)
-		love.graphics.print("+/- Iterations: LMB/RMB", 2, love.graphics.getHeight() - 69)
-		love.graphics.print("Reset: R  Adjust Z: Spacebar", 2, love.graphics.getHeight() - 46)
-		love.graphics.print("Window Size: 1-3", 2, love.graphics.getHeight() - 23)
-		love.graphics.print(
-			love.timer.getFPS() .. " FPS",
-			love.graphics.getWidth() - 80,
-			love.graphics.getHeight() - 23
-		)
+		love.graphics.print("Pan Camera: Middle Click", 2, height - 115)
+		love.graphics.print("Zoom In/Out: Scroll Up/Down", 2, height - 92)
+		love.graphics.print("+/- Iterations: LMB/RMB", 2, height - 69)
+		love.graphics.print("Reset: R  Adjust Z: Spacebar", 2, height - 46)
+		love.graphics.print("Window Size: 1-3", 2, height - 23)
+		love.graphics.print(love.timer.getFPS() .. " FPS", width - 80, height - 23)
 	else
-		love.graphics.print(love.timer.getFPS() .. " FPS", 2, love.graphics.getHeight() - 23)
+		love.graphics.print(love.timer.getFPS() .. " FPS", 2, height - 23)
 	end
 end
 

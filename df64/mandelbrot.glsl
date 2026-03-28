@@ -2,6 +2,11 @@
  * https://andrewthall.org/papers/df64_qf128.pdf
  */
 
+uniform float julia_r_hi;
+uniform float julia_r_lo;
+uniform float julia_i_hi;
+uniform float julia_i_lo;
+
 uniform float real_min_hi;
 uniform float real_min_lo;
 uniform float imag_min_hi;
@@ -77,8 +82,8 @@ bool df64_le(float2 a, float2 b) {
 vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
 	const float2 FOUR = float2(4.0, 0.0);
 	int n = 0;
-	float2 zr = float2(0.0, 0.0);
-	float2 zi = float2(0.0, 0.0);
+	float2 zr = float2(julia_r_hi, julia_r_lo);
+	float2 zi = float2(julia_i_hi, julia_i_lo);
 	float2 cr = df64_add(float2(real_min_hi, real_min_lo), df64_mult(float2(screen_coords.x, 0.0), float2(real_diff_hi, real_diff_lo)));
 	float2 ci = df64_add(float2(imag_min_hi, imag_min_lo), df64_mult(float2(screen_coords.y, 0.0), float2(imag_diff_hi, imag_diff_lo)));
 	while (df64_le(df64_add(df64_mult(zr, zr), df64_mult(zi, zi)), FOUR) && n < max_iterations) {
@@ -90,7 +95,7 @@ vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) 
 		n += 1;
 	}
 
-	// vec4 pixel = Texel(texture, texture_coords ); //This is the current pixel color
+	// vec4 pixel = Texel(texture, texture_coords); //This is the current pixel color
 	return vec4(
 		1.0 - n * inverse_max_iter,
 		0.8 - n * inverse_max_iter,
