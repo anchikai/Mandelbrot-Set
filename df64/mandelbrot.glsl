@@ -2,16 +2,20 @@
  * https://andrewthall.org/papers/df64_qf128.pdf
  */
 
-uniform float real_min;
-uniform float imag_min;
+uniform float real_min_hi;
+uniform float real_min_lo;
+uniform float imag_min_hi;
+uniform float imag_min_lo;
 
-uniform float real_diff;
-uniform float imag_diff;
+uniform float real_diff_hi;
+uniform float real_diff_lo;
+uniform float imag_diff_hi;
+uniform float imag_diff_lo;
 
 uniform float max_iterations;
 uniform float inverse_max_iter;
 
-struct float2 { float x; float y; };
+struct float2 { float hi; float lo; };
 
 float2 quickTwoSum(float a, float b) {
 	float s = a + b;
@@ -27,12 +31,12 @@ float2 twoSum(float a, float b) {
 }
 
 float2 df64_add(float2 a, float2 b) {
-	float2 s = twoSum(a.x, b.x);
-	float2 t = twoSum(a.y, b.y);
-	s.y += t.x;
-	s = quickTwoSum(s.x, s.y);
-	s.y += t.y;
-	s = quickTwoSum(s.x, s.y);
+	float2 s = twoSum(a.hi, b.hi);
+	float2 t = twoSum(a.lo, b.lo);
+	s.lo += t.hi;
+	s = quickTwoSum(s.hi, s.lo);
+	s.lo += t.lo;
+	s = quickTwoSum(s.hi, s.lo);
 	return s;
 }
 
@@ -48,22 +52,26 @@ float2 twoProd(float a, float b) {
 	float p = a * b;
 	float2 aS = split(a);
 	float2 bS = split(b);
-	float err = ((aS.x * bS.x - p) + aS.x * bS.y + aS.y * bS.x) + aS.y * bS.y;
+	float err = aS.lo * bS.lo + (
+		(aS.hi * bS.hi - p)
+		+ aS.hi * bS.lo
+		+ aS.lo * bS.hi
+	);
 	return float2(p, err);
 }
 
 float2 df64_mult(float2 a, float2 b) {
 	float2 p;
 
-	p = twoProd(a.x, b.x);
-	p.y += a.x * b.y;
-	p.y += a.y * b.x;
-	p = quickTwoSum(p.x, p.y);
+	p = twoProd(a.hi, b.hi);
+	p.lo += a.hi * b.lo;
+	p.lo += a.lo * b.hi;
+	p = quickTwoSum(p.hi, p.lo);
 	return p;
 }
 
 bool df64_le(float2 a, float2 b) {
-	return (a.x < b.x || (a.x == b.x && a.y <= b.y));
+	return (a.hi == b.hi && a.lo <= b.lo || a.hi < b.hi);
 }
 
 vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
@@ -71,11 +79,11 @@ vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) 
 	int n = 0;
 	float2 zr = float2(0.0, 0.0);
 	float2 zi = float2(0.0, 0.0);
-	float2 cr = df64_add(float2(real_min, 0.0), df64_mult(float2(screen_coords.x, 0.0), float2(real_diff, 0.0)));
-	float2 ci = df64_add(float2(imag_min, 0.0), df64_mult(float2(screen_coords.y, 0.0), float2(imag_diff, 0.0)));
+	float2 cr = df64_add(float2(real_min_hi, real_min_lo), df64_mult(float2(screen_coords.x, 0.0), float2(real_diff_hi, real_diff_lo)));
+	float2 ci = df64_add(float2(imag_min_hi, imag_min_lo), df64_mult(float2(screen_coords.y, 0.0), float2(imag_diff_hi, imag_diff_lo)));
 	while (df64_le(df64_add(df64_mult(zr, zr), df64_mult(zi, zi)), FOUR) && n < max_iterations) {
 		float2 old_zr = zr;
-		zr = df64_add(df64_mult(zr, zr), df64_mult(float2(-zi.x, -zi.y), zi));
+		zr = df64_add(df64_mult(zr, zr), df64_mult(float2(-zi.hi, -zi.lo), zi));
 		zi = df64_add(df64_mult(old_zr, zi), df64_mult(old_zr, zi));
 		zr = df64_add(zr, cr);
 		zi = df64_add(zi, ci);

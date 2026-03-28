@@ -1,7 +1,8 @@
 {
+    "editor.formatOnSave": true,
     "Lua.runtime.version": "LuaJIT",
     "Lua.workspace.library": [
-        "${3rd}/love2d/library"
+        "${addons}/love2d/module/library"
     ],
     "Lua.workspace.checkThirdParty": false,
     "Lua.diagnostics.globals": [
@@ -19,6 +20,13 @@
         "offset",
         "velx",
         "vely",
-        "font"
-    ]
+        "font",
+        "inverseMaxIterations",
+        "realDiff",
+        "imaginaryDiff",
+        "mandelbrotShader",
+    ],
+    "Lua.runtime.special": {
+        "love.filesystem.load": "loadfile"
+    }
 }

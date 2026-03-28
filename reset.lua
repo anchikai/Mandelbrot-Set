@@ -1,5 +1,5 @@
 local dragger = require("dragger")
-function reset()
+local function reset()
     size = 2.25
     juliaX = 0
     juliaY = 0
@@ -10,3 +10,5 @@ function reset()
     dragger.savedX = 0
     dragger.savedY = 0
 end
+
+return reset
